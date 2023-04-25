@@ -18,16 +18,18 @@ var(
 type Models struct {
 	Users UsersModel
 	Posts PostsModel
+	Comments CommentsModel
 }
 
 func New(db db.Session) Models {
 	return Models{
 		Users: UsersModel{db: db},
 		Posts: PostsModel{db: db},
+		Comments: CommentsModel{db: db},
 	}
 }
 
-func convertUpperIDtoInt(id db.ID) int {
+func  convertUpperIDtoInt(id db.ID) int {
 	idType := fmt.Sprintf("%T", id)
 	if idType == "int64"{
 		return int(id.(int64))

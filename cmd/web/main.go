@@ -18,6 +18,11 @@ import (
 	"github.com/upper/db/v4/adapter/postgresql"
 )
 
+const (
+	sessionKeyUserId   = "userId"
+	sessionKeyUserName = "userName"
+)
+
 type application struct {
 	appName string
 	server  server
@@ -80,7 +85,7 @@ func main() {
 		debug:   true,
 		infoLog: log.New(os.Stdout, "INFO\t", log.Ltime|log.Ldate|log.Lshortfile),
 		errLog:  log.New(os.Stderr, "ERROR\t", log.Ltime|log.Ldate|log.Llongfile),
-		Models: models.New(upper),
+		Models:  models.New(upper),
 	}
 
 	// init jet template
@@ -129,4 +134,3 @@ func runMigrate(db db.Session) error {
 
 	return err
 }
-
