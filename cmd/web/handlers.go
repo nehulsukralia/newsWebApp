@@ -13,6 +13,8 @@ import (
 )
 
 func (a *application) homeHandler(w http.ResponseWriter, r *http.Request) {
+	// panic("Something went wrong")
+
 	err := r.ParseForm()
 	if err != nil {
 		a.serverError(w, err)
@@ -80,6 +82,43 @@ func (a *application) commentHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
+func (a *application) commentPostHandler(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, 1024*2)
+	
+	postId, err := strconv.Atoi(chi.URLParam(r, "postId"))
+	if err != nil {
+		a.serverError(w, err)
+		return
+	}
+
+	userId := a.session.GetInt(r.Context(), sessionKeyUserId)
+
+	err = r.ParseForm()
+	if err != nil {
+		a.serverError(w, err)
+		return
+	}
+
+	form := forms.New(r.PostForm)
+	form.MinLength("comment", 10).MaxLength("comment", 255)
+
+	if !form.Valid() {
+		a.session.Put(r.Context(), "flash", "Error: your comment is not valid: min: 10, max: 255")
+		http.Redirect(w, r, fmt.Sprintf("/comments/%d", postId), http.StatusSeeOther)
+		return
+	}
+
+	err = a.Models.Comments.Insert(form.Get("comment"), postId, userId)
+	if err != nil {
+		a.session.Put(r.Context(), "flash", "Error: " + err.Error())
+		http.Redirect(w, r, fmt.Sprintf("/comments/%d", postId), http.StatusSeeOther)
+		return
+	}
+
+	a.session.Put(r.Context(), "flash", "comment created")
+	http.Redirect(w, r, fmt.Sprintf("/comments/%d", postId), http.StatusSeeOther)
+}	
 
 func (a *application) loginHandler(w http.ResponseWriter, r *http.Request) {
 	err := a.render(w, r, "login", nil)
@@ -218,4 +257,61 @@ func (a *application) voteHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	a.session.Put(r.Context(), "flash", "Voted successfully!")
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+func (a *application) submitHandler(w http.ResponseWriter, r *http.Request) {
+	vars := make(jet.VarMap)
+	vars.Set("form", forms.New(r.PostForm))
+	err := a.render(w, r, "submit", vars)
+	if err != nil {
+		a.serverError(w, err)
+		return
+	}
+}
+
+func (a *application) submitPostHandler(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, 1024*2) // to limit the size of input data
+
+	// parse form
+	err := r.ParseForm()
+	if err != nil {
+		a.serverError(w, err)
+		return
+	}
+
+	userId := a.session.GetInt(r.Context(), sessionKeyUserId)
+
+	vars := make(jet.VarMap)
+	form := forms.New(r.PostForm)
+
+	// validate form
+	form.Required("title", "url").Url("url").
+		MaxLength("title", 255).MaxLength("url", 255)
+
+	vars.Set("form", form)
+
+	if !form.Valid() {
+		vars.Set("errors", form.Errors)
+		err := a.render(w, r, "submit", vars)
+		if err != nil {
+			a.serverError(w, err)
+		}
+		return
+	}
+
+	// add post to db
+	_, err = a.Models.Posts.Insert(form.Get("title"), form.Get("url"), userId)
+	if err != nil {
+		form.Fail("form", "failed due to " + err.Error())
+		vars.Set("errors", form.Errors)
+		err := a.render(w, r, "submit", vars)
+		if err != nil {
+			a.serverError(w, err)
+		}
+		return
+	}
+
+	a.session.Put(r.Context(), "flash", "post submitted successfully!")
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }

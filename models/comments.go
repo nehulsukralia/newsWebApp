@@ -9,7 +9,7 @@ import (
 
 type Comment struct {
 	ID        int       `db:"comment_id,omitempty"`
-	CreatedAt time.Time `db:"created_at,omitempty"`
+	CreatedAt time.Time `db:"c_created_at,omitempty"`
 	Body      string    `db:"body"`
 	PostID    int       `db:"post_id"`
 	UserID    int       `db:"user_id"`

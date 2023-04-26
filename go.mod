@@ -18,6 +18,7 @@ require (
 	github.com/jackc/pgservicefile v0.0.0-20200714003250-2b9c44734f2b // indirect
 	github.com/jackc/pgtype v1.10.0 // indirect
 	github.com/jackc/pgx/v4 v4.15.0 // indirect
+	github.com/justinas/nosurf v1.1.1 // indirect
 	github.com/lib/pq v1.10.4 // indirect
 	github.com/segmentio/fasthash v1.0.3 // indirect
 	github.com/upper/db/v4 v4.6.0 // indirect
